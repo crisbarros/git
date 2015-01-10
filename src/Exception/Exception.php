@@ -40,7 +40,7 @@
  * @link       http://www.github.com/sebastianbergmann/git
  */
 
-namespace SebastianBergmann\Git;
+namespace Git;
 
 /**
  * @author     Sebastian Bergmann <sebastian@phpunit.de>

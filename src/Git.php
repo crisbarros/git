@@ -40,7 +40,7 @@
  * @link       http://www.github.com/sebastianbergmann/git
  */
 
-namespace SebastianBergmann\Git;
+namespace Git;
 
 use DateTime;
 
@@ -50,19 +50,36 @@ use DateTime;
  * @license    http://www.opensource.org/licenses/BSD-3-Clause  The BSD 3-Clause License
  * @link       http://www.github.com/sebastianbergmann/git
  */
-class Git
+class Wrapper
 {
     /**
      * @var string
      */
     private $repositoryPath;
 
-    /**
-     * @param string $repositoryPath
-     */
-    public function __construct($repositoryPath)
+	/**
+	 * Returns the *Singleton* instance of this class.
+	 *
+	 * @staticvar Singleton $instance The *Singleton* instances of this class.
+	 *
+	 * @return Singleton The *Singleton* instance.
+	 */
+	public static function getInstance($repositoryPath = '')
+	{
+		static $instance = null;
+		if (null === $instance) {
+			$class_name = __CLASS__;
+			$instance = new $class_name();
+		}
+		if (!empty($repositoryPath)) {
+			$instance->repositoryPath = realpath($repositoryPath);
+		}
+
+		return $instance;
+	}
+
+    protected function __construct()
     {
-        $this->repositoryPath = realpath($repositoryPath);
     }
 
     /**
@@ -80,12 +97,9 @@ class Git
      */
     public function getCurrentBranch()
     {
-        $output = $this->execute('git status --porcelain --branch');
+        $output = $this->execute('git rev-parse --abbrev-ref HEAD');
 
-        $tmp = explode(' ', $output[0]);
-        $tmp = explode('...', $tmp[1]);
-
-        return $tmp[0];
+        return trim($output[0]);
     }
 
     /**
@@ -105,14 +119,15 @@ class Git
     /**
      * @return array
      */
-    public function getRevisions()
+    public function getCommitLog($limit = 3)
     {
         $output = $this->execute(
-            'git log --no-merges --date-order --reverse --format=medium'
+            "git log master --no-merges --format=medium -n {$limit}"
         );
 
         $numLines  = count($output);
         $revisions = array();
+        $author = $sha1 = '';
 
         for ($i = 0; $i < $numLines; $i++) {
             $tmp = explode(' ', $output[$i]);
